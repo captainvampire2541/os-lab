@@ -1,0 +1,194 @@
+Q1)Implement the producer- cOnsumer problem using pthreads and mutex operations. Constraints: the consumer only
+ (a) A producer only produces if the buffer is empty, and if some content is in the buffer. consumes 
+(b) A producer writes an item into the buffer, and the consumer deletes the last produced item in the buffer. 
+(c) A producer writes on the last consumed index of the buffer.
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+
+#define BUFFER_SIZE 5
+
+int buffer[BUFFER_SIZE];
+int count = 0; // Number of items in the buffer
+int in = 0;    // Index for inserting into the buffer
+int out = 0;   // Index for removing from the buffer
+
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t empty = PTHREAD_COND_INITIALIZER;
+pthread_cond_t full = PTHREAD_COND_INITIALIZER;
+
+void *producer(void *arg) {
+    int item;
+
+    for (int i = 0; i < 10; i++) {
+        item = rand() % 100; // Generate a random item
+
+        pthread_mutex_lock(&mutex);
+        while (count == BUFFER_SIZE) {
+            pthread_cond_wait(&empty, &mutex);
+        }
+
+        buffer[in] = item;
+        in = (in + 1) % BUFFER_SIZE;
+        count++;
+
+        printf("Produced item %d\n", item);
+
+        pthread_cond_signal(&full);
+        pthread_mutex_unlock(&mutex);
+    }
+
+    pthread_exit(NULL);
+}
+
+void *consumer(void *arg) {
+    int item;
+
+    for (int i = 0; i < 10; i++) {
+        pthread_mutex_lock(&mutex);
+        while (count == 0) {
+            pthread_cond_wait(&full, &mutex);
+        }
+
+        item = buffer[out];
+        out = (out + 1) % BUFFER_SIZE;
+        count--;
+
+        printf("Consumed item %d\n", item);
+
+        pthread_cond_signal(&empty);
+        pthread_mutex_unlock(&mutex);
+    }
+
+    pthread_exit(NULL);
+}
+
+int main() {
+    pthread_t producer_thread, consumer_thread;
+
+    // Create producer and consumer threads
+    pthread_create(&producer_thread, NULL, producer, NULL);
+    pthread_create(&consumer_thread, NULL, consumer, NULL);
+
+    // Join threads
+    pthread_join(producer_thread, NULL);
+    pthread_join(consumer_thread, NULL);
+
+    return 0;
+}
+Q2)Implement the reader-writer problem using semaphore and mnutex operations to syn- chronize n readers active,in the reader section at the same time and one writer active at a time. Constraints:
+ (a) If n readers are active, no writer is allowed to write. 
+(b) If one writer is wriding, nO other writer- should be allowed to rcad or write on the shared variable.
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include <semaphore.h>
+
+#define NUM_READERS 3
+#define NUM_WRITERS 1
+
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+sem_t reader_sem, writer_sem;
+
+int readers_count = 0;
+int shared_variable = 0;
+
+void *reader(void *arg) {
+    while (1) {
+        pthread_mutex_lock(&mutex);
+        readers_count++;
+        if (readers_count == 1) {
+            sem_wait(&writer_sem); // Wait if a writer is writing
+        }
+        pthread_mutex_unlock(&mutex);
+
+        // Reading operation
+        printf("Reader %d reads: %d\n", *((int *)arg), shared_variable);
+
+        pthread_mutex_lock(&mutex);
+        readers_count--;
+        if (readers_count == 0) {
+            sem_post(&writer_sem); // Signal writer to write
+        }
+        pthread_mutex_unlock(&mutex);
+
+        // Sleep to simulate reading time
+        sleep(rand() % 3);
+    }
+    pthread_exit(NULL);
+}
+
+void *writer(void *arg) {
+    while (1) {
+        sem_wait(&reader_sem); // Wait if any readers are active
+        sem_wait(&writer_sem); // Wait if another writer is writing
+
+        // Writing operation
+        shared_variable++;
+        printf("Writer writes: %d\n", shared_variable);
+
+        sem_post(&writer_sem); // Signal writer semaphore
+        sem_post(&reader_sem); // Signal reader semaphore
+
+        // Sleep to simulate writing time
+        sleep(rand() % 3);
+    }
+    pthread_exit(NULL);
+}
+
+int main() {
+    pthread_t readers[NUM_READERS], writers[NUM_WRITERS];
+    int reader_ids[NUM_READERS], writer_ids[NUM_WRITERS];
+
+    // Initialize semaphores
+    sem_init(&reader_sem, 0, NUM_READERS);
+    sem_init(&writer_sem, 0, 1);
+
+    // Create reader threads
+    for (int i = 0; i < NUM_READERS; i++) {
+        reader_ids[i] = i + 1;
+        pthread_create(&readers[i], NULL, reader, &reader_ids[i]);
+    }
+
+Malluvalasa Jaideep, [5/2/2024 8:04 PM]
+// Create writer threads
+    for (int i = 0; i < NUM_WRITERS; i++) {
+        writer_ids[i] = i + 1;
+        pthread_create(&writers[i], NULL, writer, &writer_ids[i]);
+    }
+
+    // Join reader threads
+    for (int i = 0; i < NUM_READERS; i++) {
+        pthread_join(readers[i], NULL);
+    }
+
+    // Join writer threads
+    for (int i = 0; i < NUM_WRITERS; i++) {
+        pthread_join(writers[i], NULL);
+    }
+
+    // Destroy semaphores
+    sem_destroy(&reader_sem);
+    sem_destroy(&writer_sem);
+
+    return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
