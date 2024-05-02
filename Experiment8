@@ -1,0 +1,114 @@
+l: Develop a program that lemoustrates Inter-Process Communication (IPC) using named pipes. Tasks:
+ ◦ Create a pair of named pipes: one for sending data and another for receiving data. 
+• Develop a sender program that writes a message to the sending pipe. . Create a receiver program that reads from the receiving pipe and displays the received mesage
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <string.h>
+
+#define BUF_SIZE 1024
+
+int main() {
+    int sfd, rfd;
+    char *s_fifo = "/tmp/sender", *r_fifo = "/tmp/receiver", buf[BUF_SIZE];
+
+    mkfifo(s_fifo, 0666); mkfifo(r_fifo, 0666);
+    sfd = open(s_fifo, O_WRONLY); rfd = open(r_fifo, O_RDONLY);
+
+    printf("Sender program\nEnter message to send: ");
+    fgets(buf, BUF_SIZE, stdin); write(sfd, buf, strlen(buf) + 1);
+
+    printf("Receiver program\n");
+    read(rfd, buf, BUF_SIZE); printf("Received: %s", buf);
+
+    close(sfd); close(rfd); unlink(s_fifo); unlink(r_fifo);
+    return 0;
+}
+Demonstrate the usage of Shared Memory for IPC.
+Create a shared mnetnory segment and attach it to multiple processes: 
+• Dervelop a prodneer-consumer model, where one process writes data into the shured memory, and another process reads from it
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <string.h>
+
+#define SHM_SIZE 1024
+
+struct shared_data { int written; char message[SHM_SIZE]; };
+
+int main() {
+    int shmid;
+    key_t key = 1234;
+    struct shared_data *shared_memory;
+
+    shmid = shmget(key, sizeof(struct shared_data), IPC_CREAT | 0666);
+    if (shmid == -1) { perror("shmget"); exit(EXIT_FAILURE); }
+
+    shared_memory = shmat(shmid, NULL, 0);
+    if (shared_memory == (void *)-1) { perror("shmat"); exit(EXIT_FAILURE); }
+
+    printf("Producer process\nEnter message to write into shared memory: ");
+    fgets(shared_memory->message, SHM_SIZE, stdin);
+    shared_memory->written = 1;
+
+    shmdt(shared_memory);
+
+    printf("\nConsumer process\n");
+    while (!shared_memory->written) { sleep(1); }
+    printf("Received message from shared memory: %s", shared_memory->message);
+
+    shmctl(shmid, IPC_RMID, NULL);
+
+    return 0;
+}
+3): Explore IPC using Mosige Poxsing Lechniques. Tasks: 
+• Design two processcs where one process sends a signal to another process. 
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/msg.h>
+#include <signal.h>
+
+#define MSG_SIZE 128
+
+struct message { long mtype; char mtext[MSG_SIZE]; };
+
+void sender_handler(int sig) { printf("Sender received signal %d\n", sig); }
+void receiver_handler(int sig) { printf("Receiver received signal %d\n", sig); }
+
+int main() {
+    pid_t pid;
+    key_t key = ftok("/tmp", 'A');
+    int msqid;
+    struct message msg;
+
+    msqid = msgget(key, IPC_CREAT | 0666);
+    if (msqid == -1) { perror("msgget"); exit(EXIT_FAILURE); }
+
+    pid = fork();
+    if (pid < 0) { perror("fork"); exit(EXIT_FAILURE); }
+    else if (pid == 0) { signal(SIGUSR1, SIG_IGN); 
+ signal(SIGUSR2, sender_handler); sleep(1); 
+ msg.mtype = 1; sprintf(msg.mtext, "Hello from sender!"); 
+ if (msgsnd(msqid, &msg, sizeof(msg.mtext), 0) == -1) { perror("msgsnd"); 
+ exit(EXIT_FAILURE); } }
+    else { 
+ signal(SIGUSR1, receiver_handler); 
+ signal(SIGUSR2, SIG_IGN); 
+ printf("Receiver waiting for message...\n"); 
+ if (msgrcv(msqid, &msg, sizeof(msg.mtext), 1, 0) == -1) { 
+ perror("msgrcv"); exit(EXIT_FAILURE); } 
+ printf("Received message from sender: %s\n", msg.mtext); 
+ if (msgctl(msqid, IPC_RMID, NULL) == -1) { perror("msgctl"); 
+ exit(EXIT_FAILURE); } }
+
+    return 0;
+}
+• Develop signal handers in both processes to manage incoming signals and per- formn specific actions based on the received signal,
