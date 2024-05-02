@@ -1,0 +1,205 @@
+Q1 Create a C program that prompts the user to enter a directory name and uses the mkdir system call to create the directory.
+Ans.1 
+
+
+
+#include <stdio.h>
+
+#include <stdlib.h>
+
+#include <sys/stat.h>
+
+#include <sys/types.h>
+
+
+
+int main() {
+
+    char dirname[100];
+
+
+
+    // Prompt user to enter directory name
+
+    printf("Enter directory name: ");
+
+    scanf("%s", dirname);
+
+
+
+    // Create directory using mkdir system call
+
+    if (mkdir(dirname, 0777) == -1) {
+
+        perror("Error creating directory");
+
+        exit(EXIT_FAILURE);
+
+    }
+
+
+
+    printf("Directory '%s' created successfully.\n", dirname);
+
+
+
+    return 0;
+
+}
+
+Q2)Write a program that opens the current directory using opendir and reads its contents using readdir, then displays the list of directory entrics.
+
+
+
+Ans.2
+
+#include <stdio.h>
+
+#include <stdlib.h>
+
+#include <dirent.h>
+
+
+
+int main() {
+
+    DIR *dir;
+
+    struct dirent *entry;
+
+
+
+    // Open current directory
+
+    dir = opendir(".");
+
+    if (dir == NULL) {
+
+        perror("Error opening directory");
+
+        exit(EXIT_FAILURE);
+
+    }
+
+
+
+    // Read directory entries and display them
+
+    printf("Contents of current directory:\n");
+
+    while ((entry = readdir(dir)) != NULL) {
+
+        printf("%s\n", entry->d_name);
+
+    }
+
+
+
+    // Close directory
+
+    closedir(dir);
+
+
+
+    return 0;
+
+}
+
+Q3) Create a C program to delete a directory specified by the user using the rmdir system call.
+
+Ans.3 
+
+
+
+#include <stdio.h>
+
+#include <stdlib.h>
+
+#include <unistd.h>
+
+
+
+int main() {
+
+    char dirname[100];
+
+
+
+    // Prompt user to enter directory name
+
+    printf("Enter directory name to delete: ");
+
+    scanf("%s", dirname);
+
+
+
+    // Delete directory using rmdir system call
+
+    if (rmdir(dirname) == -1) {
+
+        perror("Error deleting directory");
+
+        exit(EXIT_FAILURE);
+
+    }
+
+
+
+    printf("Directory '%s' deleted successfully.\n", dirname);
+
+
+
+    return 0;
+
+}
+
+
+q4)Write a program that uses the getcud system call to retrieve the current working directory and displays it to the user. 
+
+
+Ans. 4
+
+
+
+#include <stdio.h>
+
+#include <stdlib.h>
+
+#include <unistd.h>
+
+
+
+#define MAX_PATH_LEN 4096
+
+
+
+int main() {
+
+    char cwd[MAX_PATH_LEN];
+
+
+
+    // Get current working directory using getcwd system call
+
+    if (getcwd(cwd, sizeof(cwd)) == NULL) {
+
+        perror("Error getting current working directory");
+
+        exit(EXIT_FAILURE);
+
+    }
+
+
+
+    // Print current working directory
+
+    printf("Current working directory: %s\n", cwd);
+
+
+
+    return 0;
+
+}
+
+
+
