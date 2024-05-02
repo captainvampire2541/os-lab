@@ -1,0 +1,394 @@
+Q1)Write a program in C using system calls that lets users choose to copy either the first half or the second half of a file by entering 1 or 2
+A1)#include <stdio.h>
+
+#include <stdlib.h>
+
+#include <fcntl.h>
+
+#include <unistd.h>
+
+
+
+#define BUF_SIZE 4096
+
+
+
+int main(int argc, char *argv[]) {
+
+    if (argc != 3) {
+
+        fprintf(stderr, "Usage: %s <source_file> <destination_file>\n", argv[0]);
+
+        exit(EXIT_FAILURE);
+
+    }
+
+
+
+    char *source_file = argv[1];
+
+    char *dest_file = argv[2];
+
+
+
+    int source_fd = open(source_file, O_RDONLY);
+
+    if (source_fd == -1) {
+
+        perror("Failed to open source file");
+
+        exit(EXIT_FAILURE);
+
+    }
+
+
+
+    off_t file_size = lseek(source_fd, 0, SEEK_END);
+
+    if (file_size == -1) {
+
+        perror("Failed to get file size");
+
+        close(source_fd);
+
+        exit(EXIT_FAILURE);
+
+    }
+
+
+
+    off_t half_size = file_size / 2;
+
+    off_t offset = 0;
+
+
+
+    int choice;
+
+    printf("Enter 1 to copy the first half or 2 to copy the second half: ");
+
+    scanf("%d", &choice);
+
+
+
+    if (choice == 1) {
+
+        // Copy the first half
+
+        offset = 0;
+
+    } else if (choice == 2) {
+
+        // Copy the second half
+
+        offset = half_size;
+
+    } else {
+
+        fprintf(stderr, "Invalid choice\n");
+
+        close(source_fd);
+
+        exit(EXIT_FAILURE);
+
+    }
+
+
+
+    // Create destination file
+
+    int dest_fd = open(dest_file, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+
+    if (dest_fd == -1) {
+
+        perror("Failed to create destination file");
+
+        close(source_fd);
+
+        exit(EXIT_FAILURE);
+
+    }
+
+
+
+    // Set the offset in source file
+
+    if (lseek(source_fd, offset, SEEK_SET) == -1) {
+
+        perror("Failed to set offset in source file");
+
+        close(source_fd);
+
+        close(dest_fd);
+
+        exit(EXIT_FAILURE);
+
+    }
+
+
+
+    // Copy data from source to destination
+
+    char buffer[BUF_SIZE];
+
+    ssize_t bytes_read, bytes_written;
+
+    while ((bytes_read = read(source_fd, buffer, sizeof(buffer))) > 0) {
+
+        bytes_written = write(dest_fd, buffer, bytes_read);
+
+        if (bytes_written != bytes_read) {
+
+            perror("Write error");
+
+            close(source_fd);
+
+            close(dest_fd);
+
+            exit(EXIT_FAILURE);
+
+        }
+
+    }
+
+
+
+    if (bytes_read == -1) {
+
+        perror("Read error");
+
+        close(source_fd);
+
+        close(dest_fd);
+
+        exit(EXIT_FAILURE);
+
+    }
+
+
+
+    printf("File copied successfully.\n");
+
+
+
+    // Close file descriptors
+
+    close(source_fd);
+
+    close(dest_fd);
+
+
+
+    return 0;
+
+}
+
+Q 2: Create a C program using system calls that keeps reading from the console until the user types '$'. Save the input data to a file called 'input.txt"
+A2)
+
+#include <stdio.h>
+
+#include <stdlib.h>
+
+#include <fcntl.h>
+
+#include <unistd.h>
+
+
+
+#define BUF_SIZE 4096
+
+
+
+int main() {
+
+    char buffer[BUF_SIZE];
+
+    int input_fd;
+
+    ssize_t bytes_read;
+
+
+
+    // Open or create input.txt for writing
+
+    input_fd = open("input.txt", O_WRONLY | O_CREAT | O_TRUNC, 0666);
+
+    if (input_fd == -1) {
+
+        perror("Failed to open input.txt for writing");
+
+        exit(EXIT_FAILURE);
+
+    }
+
+
+
+    printf("Type your input. Type '$' to end.\n");
+
+
+
+    // Read from console until '$' is entered
+
+    while ((bytes_read = read(STDIN_FILENO, buffer, sizeof(buffer))) > 0) {
+
+        // Write to input.txt
+
+        if (write(input_fd, buffer, bytes_read) != bytes_read) {
+
+            perror("Write error");
+
+            close(input_fd);
+
+            exit(EXIT_FAILURE);
+
+        }
+
+
+
+        // Check if '$' is entered
+
+        if (buffer[0] == '$') {
+
+            break;
+
+        }
+
+    }
+
+
+
+    if (bytes_read == -1) {
+
+        perror("Read error");
+
+        close(input_fd);
+
+        exit(EXIT_FAILURE);
+
+    }
+
+
+
+    printf("Input saved to input.txt.\n");
+
+
+
+    // Close input file
+
+    close(input_fd);
+
+
+
+    return 0;
+
+}
+
+Q3)Write a C program that encrypts a text file using a simple encryption technique and saves the encrypted content to a new file.
+
+Requirements:
+
+Input: Provide a text file named "input.txt" with plain text content
+
+Encryption Technique: Shift each character in the file content by a fixed number
+A3)
+#include <stdio.h>
+
+
+
+#define SHIFT_AMOUNT 3 // You can change this to any desired value
+
+
+
+int main() {
+
+    FILE *input_file, *output_file;
+
+    char input_filename[] = "input.txt";
+
+    char output_filename[] = "encrypted.txt";
+
+    char ch;
+
+
+
+    // Open input file for reading
+
+    input_file = fopen(input_filename, "r");
+
+    if (input_file == NULL) {
+
+        perror("Error opening input file");
+
+        return 1;
+
+    }
+
+
+
+    // Open output file for writing
+
+    output_file = fopen(output_filename, "w");
+
+    if (output_file == NULL) {
+
+        perror("Error opening output file");
+
+        fclose(input_file);
+
+        return 1;
+
+    }
+
+
+
+    // Encrypt and write content to the output file
+
+    while ((ch = fgetc(input_file)) != EOF) {
+
+        // Check if character is a letter
+
+        if ((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z')) {
+
+            // Encrypt uppercase letters
+
+            if (ch >= 'A' && ch <= 'Z') {
+
+                ch = 'A' + (ch - 'A' + SHIFT_AMOUNT) % 26;
+
+            }
+
+            // Encrypt lowercase letters
+
+            else if (ch >= 'a' && ch <= 'z') {
+
+                ch = 'a' + (ch - 'a' + SHIFT_AMOUNT) % 26;
+
+            }
+
+        }
+
+        // Write encrypted character to the output file
+
+        fputc(ch, output_file);
+
+    }
+
+
+
+    // Close files
+
+    fclose(input_file);
+
+    fclose(output_file);
+
+
+
+    printf("File encrypted successfully. Encrypted content saved to encrypted.txt.\n");
+
+
+
+    return 0;
+
+}
+
