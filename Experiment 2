@@ -1,0 +1,174 @@
+Q1) Write a shell script that  calculates the sum of numbers from 1 to a user-provided value using for loop?
+A1)#!/bin/bash
+
+echo "Enter a value:"
+read value
+
+sum=0
+
+for (( i=1; i<=$value; i++ ))
+do
+    sum=$((sum + i))
+done
+
+echo "The sum of numbers from 1 to $value is: $sum"
+
+Q2)Write a script to genrates  the fibonacci series up to   specified  number of terms  using  a for loop 
+A2)#!/bin/bash
+
+echo "Enter the number of terms:"
+read n
+
+a=0
+b=1
+
+echo "Fibonacci series up to $n terms:"
+
+for (( i=0; i<n; i++ ))
+do
+    echo -n "$a "
+    fn=$((a + b))
+    a=$b
+    b=$fn
+done
+
+echo
+Q3)Develop a script that checks whether a user input  number is prime  or not using a for  loop
+A3)#!/bin/bash
+
+echo "Enter a number:"
+read num
+
+is_prime=true
+
+if [ $num -eq 1 ]; then
+    is_prime=false
+fi
+
+for (( i=2; i*i<=num; i++ ))
+do
+    if [ $((num % i)) -eq 0 ]; then
+        is_prime=false
+        break
+    fi
+done
+
+if $is_prime; then
+    echo "$num is a prime number."
+else
+    echo "$num is not a prime number."
+fi
+Q4)Create a  script that reverses a given number using  a while loop
+A4)#!/bin/bash
+
+echo "Enter a number:"
+read num
+
+reversed=0
+
+while [ $num -gt 0 ]
+do
+    remainder=$((num % 10))
+    reversed=$((reversed * 10 + remainder))
+    num=$((num / 10))
+done
+
+echo "Reversed number: $reversed"
+Q5)Write a script to display all files  in a directory  using a for loop
+A5)#!/bin/bash
+
+echo "Enter the directory path:"
+read directory
+
+if [ -d "$directory" ]; then
+    echo "Files in the directory $directory:"
+    
+    for file in "$directory"/*
+    do
+        if [ -f "$file" ]; then
+            echo "$file"
+        fi
+    done
+else
+    echo "Directory not found."
+fi
+Q6)Develop  a script to display that  asks the user for a username and password ,allowing access only if both are correct using control structures
+A6)#!/bin/bash
+
+# Define correct username and password
+correct_username="admin"
+correct_password="password123"
+
+# Prompt the user for username
+echo "Enter your username:"
+read username
+
+# Prompt the user for password
+echo "Enter your password:"
+read -s password
+
+# Check if both username and password are correct
+if [ "$username" == "$correct_username" ] && [ "$password" == "$correct_password" ]; then
+    echo "Access granted. Welcome, $username!"
+else
+    echo "Access denied. Incorrect username or password."
+fi
+Q7)Create a menu-driven calculator script that perform basic arithemetic operations based on user selection using a case structure
+A7)#!/bin/bash
+
+# Function to perform addition
+addition() {
+    result=$(echo "$1 + $2" | bc)
+    echo "Result: $result"
+}
+
+# Function to perform subtraction
+subtraction() {
+    result=$(echo "$1 - $2" | bc)
+    echo "Result: $result"
+}
+
+# Function to perform multiplication
+multiplication() {
+    result=$(echo "$1 * $2" | bc)
+    echo "Result: $result"
+}
+
+# Function to perform division
+division() {
+    if [ $2 -eq 0 ]; then
+        echo "Error: Division by zero!"
+    else
+        result=$(echo "scale=2; $1 / $2" | bc)
+        echo "Result: $result"
+    fi
+}
+
+# Menu
+echo "Menu:"
+echo "1. Addition"
+echo "2. Subtraction"
+echo "3. Multiplication"
+echo "4. Division"
+echo "5. Exit"
+
+# Prompt user for choice
+read -p "Enter your choice: " choice
+
+# Perform operation based on user choice
+case $choice in
+    1)  read -p "Enter first number: " num1
+        read -p "Enter second number: " num2
+        addition $num1 $num2 ;;
+    2)  read -p "Enter first number: " num1
+        read -p "Enter second number: " num2
+        subtraction $num1 $num2 ;;
+    3)  read -p "Enter first number: " num1
+        read -p "Enter second number: " num2
+        multiplication $num1 $num2 ;;
+    4)  read -p "Enter first number: " num1
+        read -p "Enter second number: " num2
+        division $num1 $num2 ;;
+    5)  echo "Exiting..."; exit ;;
+    *)  echo "Invalid choice";;
+esac
